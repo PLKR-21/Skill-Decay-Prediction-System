@@ -1,158 +1,119 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import joblib
+from sqlalchemy import create_engine
 import plotly.graph_objects as go
-from pytrends.request import TrendReq
+import numpy as np
 
-# --- CONFIGURATION ---
-st.set_page_config(page_title="Skill Decay Intelligence", layout="wide", page_icon="📈")
-st.title("🛡️ Skill Decay Prediction System")
-st.markdown("Predictive analytics for technology obsolescence and career intelligence.")
+# 1. Page Configuration (Makes it wide and sleek)
+st.set_page_config(page_title="Skill Decay Predictor", page_icon="🛡️", layout="wide")
 
-# --- LOAD DATA (CLOUD) & MODEL (LOCAL) ---
-@st.cache_data(ttl=600)
-def load_data():
-    try:
-        # Connects to TiDB using your .streamlit/secrets.toml
-        conn = st.connection("cloud_db", type="sql")
-        df = conn.query("SELECT * FROM skill_features")
-        return df
-    except Exception as e:
-        st.error(f"Cloud Connection Failed: {e}")
-        # Local fallback for offline development
-        return pd.read_csv('data/engineered_features.csv')
+# Custom CSS for cleaner UI
+st.markdown("""
+    <style>
+    .stMetric { background-color: #1E1E1E; padding: 15px; border-radius: 10px; border: 1px solid #333; }
+    </style>
+""", unsafe_allow_html=True)
 
+# 2. Database Connection
 @st.cache_resource
-def load_model():
-    return joblib.load('models/best_forecast_model.pkl')
+def init_connection():
+    db_url = st.secrets["connections"]["cloud_db"]["url"]
+    return create_engine(db_url)
 
-df = load_data()
-model = load_model()
+engine = init_connection()
 
-# --- SIDEBAR: USER INPUT ---
-st.sidebar.header("🔍 Skill Analysis")
-skill_list = sorted(df['Skill'].unique())
-selected_skill = st.sidebar.selectbox("Select Technology to Analyze", skill_list)
+# 3. Fetch Data from TiDB
+@st.cache_data(ttl=600) # Caches data for 10 minutes to make the app lightning fast
+def load_data():
+    query = "SELECT * FROM skill_features"
+    return pd.read_sql(query, engine)
 
-# --- GET SKILL DATA ---
-skill_data = df[df['Skill'] == selected_skill].sort_values('Year')
-latest_data = skill_data.iloc[-1]
+try:
+    df = load_data()
+except Exception as e:
+    st.error("🚨 Could not connect to the database. Please check your secrets.toml file.")
+    st.stop()
 
-# --- FORECASTING MODULE (3-YEAR) ---
-future_years = [2026, 2027, 2028]
-predictions = []
+# 4. Header Section
+st.title("🛡️ Tech Obsolescence & Skill Decay Predictor")
+st.markdown("An AI-driven analytics terminal tracking the 3-year trajectory of 100+ industry technologies.")
+st.divider()
 
-for year in future_years:
-    future_features = pd.DataFrame([{
-        'Year': year,
-        'Survey_Usage': max(0, latest_data['Survey_Usage'] * (1 + latest_data['YoY_Growth'])),
-        'Search_Index': max(0, latest_data['Search_Index'] * (1 + latest_data['YoY_Growth'])),
-        'Adoption_Rate': latest_data['Adoption_Rate'],
-        'YoY_Growth': latest_data['YoY_Growth'],
-        'Trend_Slope': latest_data['Trend_Slope'],
-        'Demand_Volatility': latest_data['Demand_Volatility'],
-        'Decline_Acceleration': latest_data['Decline_Acceleration']
-    }])
-    pred = max(0, model.predict(future_features)[0])
-    predictions.append(pred)
+# 5. Domain-Wise Selection UI
+st.subheader("1. Select Technology Profile")
+col1, col2 = st.columns(2)
 
-# --- CUSTOM RISK SCORE FORMULA (0 - 100) ---
-if predictions[-1] < latest_data['Job_Demand']:
-    decline_rate = (latest_data['Job_Demand'] - predictions[-1]) / (latest_data['Job_Demand'] + 1)
-else:
-    decline_rate = 0.0  
+with col1:
+    # Get unique domains from the database
+    domains = sorted(df['Domain'].unique().tolist())
+    selected_domain = st.selectbox("📂 Filter by Domain", domains)
 
-slope_penalty = min(1.0, abs(min(0, latest_data['Trend_Slope'])) / 5000.0)
-volatility_penalty = min(1.0, latest_data['Demand_Volatility'] / 5000.0)
-instability_penalty = 1.0 - latest_data['Adoption_Stability']
+with col2:
+    # Filter skills based on the chosen domain
+    domain_skills = sorted(df[df['Domain'] == selected_domain]['Skill_Name'].tolist())
+    selected_skill = st.selectbox("🎯 Select Specific Skill", domain_skills)
 
-risk_score = (decline_rate * 40) + (slope_penalty * 30) + (volatility_penalty * 15) + (instability_penalty * 15)
-risk_score = min(100.0, max(0.0, risk_score))
-
-if risk_score <= 30:
-    risk_category, color = "STABLE", "green"
-elif risk_score <= 60:
-    risk_category, color = "MODERATE RISK", "orange"
-else:
-    risk_category, color = "HIGH RISK", "red"
-
-# --- UI VISUALIZATION ---
-col1, col2, col3 = st.columns(3)
-col1.metric("Current Job Demand (2025)", f"{int(latest_data['Job_Demand']):,}")
-col2.metric("3-Year Forecast (2028)", f"{int(predictions[-1]):,}", 
-            delta=f"{int(predictions[-1] - latest_data['Job_Demand']):,}", delta_color="normal")
-col3.metric("Skill Decay Risk Score", f"{risk_score:.1f}%", delta=risk_category, delta_color="inverse" if risk_score > 30 else "normal")
+# 6. Extract the selected skill's data
+skill_data = df[df['Skill_Name'] == selected_skill].iloc[0]
 
 st.divider()
 
-# --- HISTORICAL & AI FORECAST GRAPH ---
-st.subheader(f"📈 10-Year Trajectory & XGBoost Forecast: {selected_skill}")
-fig = go.Figure()
-fig.add_trace(go.Scatter(x=skill_data['Year'], y=skill_data['Job_Demand'], 
-                         mode='lines+markers', name='Historical Demand', line=dict(color='cyan', width=3)))
-fig.add_trace(go.Scatter(x=[2025] + future_years, y=[latest_data['Job_Demand']] + predictions, 
-                         mode='lines+markers', name='AI Forecast', line=dict(color='orange', width=3, dash='dash')))
-fig.update_layout(xaxis_title="Year", yaxis_title="Job Demand Frequency", template="plotly_dark", hovermode="x unified")
-st.plotly_chart(fig, use_container_width=True)
+# 7. Core Metrics Display
+st.subheader(f"📊 Market Analysis: {selected_skill}")
+m1, m2, m3 = st.columns(3)
 
-# --- LIVE REAL-WORLD DATA ENGINE (GOOGLE TRENDS) ---
-st.divider()
-st.subheader("🌐 Live Market Pulse (Last 30 Days)")
-st.write(f"Fetching real-time global search interest for **{selected_skill}**...")
+# Format floats to 2 decimal places to guarantee the "0" bug is gone visually
+current_demand = float(skill_data['Job_Demand'])
+forecast = float(skill_data['3_Year_Forecast'])
+risk = float(skill_data['Risk_Score'])
+slope = float(skill_data['Trend_Slope'])
 
-@st.cache_data(ttl=3600, show_spinner=False) 
-def get_live_trends(skill_name, current_risk):
-    try:
-        pytrends = TrendReq(hl='en-US', tz=360, retries=2, backoff_factor=0.5)
-        # Avoid generic terms
-        search_term = skill_name + ' programming' if skill_name in ['Go', 'Rust', 'Swift', 'ActionScript'] else skill_name
-        pytrends.build_payload([search_term], timeframe='today 1-m')
-        data = pytrends.interest_over_time()
-        
-        if not data.empty:
-            return data.drop(columns=['isPartial']), True
-        raise ValueError("Empty data from Google")
-        
-    except Exception as e:
-        # --- FAILSAFE: Generate realistic 30-day pulse if API is blocked ---
-        dates = pd.date_range(end=pd.Timestamp.today(), periods=30)
-        base_interest = 60 if current_risk == "STABLE" else 30
-        simulated_data = np.random.normal(0, 5, size=30).cumsum() + base_interest
-        simulated_data = np.clip(simulated_data, 10, 100) 
-        
-        fallback_df = pd.DataFrame(simulated_data, index=dates, columns=['Search Volume'])
-        return fallback_df, False
+m1.metric("Current Market Demand", f"{current_demand:.2f} / 100")
 
-live_data, is_real = get_live_trends(selected_skill, risk_category)
+# Color code the slope direction
+slope_arrow = "📈" if slope > 0 else "📉"
+m2.metric("Predicted 3-Year Demand", f"{forecast:.2f} / 100", f"{slope_arrow} {slope:.2f} annual shift")
 
-if not is_real:
-    st.warning("⚠️ Google Trends API rate-limited. Displaying mathematically simulated 30-day pulse based on risk profile.")
-
-if live_data is not None:
-    fig_live = go.Figure()
-    fig_live.add_trace(go.Scatter(x=live_data.index, y=live_data.iloc[:, 0], 
-                             mode='lines', name='Search Volume', line=dict(color='#00ffcc', width=2, shape='spline')))
-    fig_live.update_layout(height=250, margin=dict(l=0, r=0, t=30, b=0), template="plotly_dark")
-    st.plotly_chart(fig_live, use_container_width=True)
-
-# --- RECOMMENDATION ENGINE ---
-st.divider()
-st.subheader("💡 Intelligent Career Guidance")
-
-tech_clusters = {
-    'jQuery': ['React', 'Vue.js', 'Next.js'], 'PHP': ['Node.js', 'Go', 'Python'],
-    'Ruby': ['Python', 'Go', 'Rust'], 'Objective-C': ['Swift', 'Flutter', 'Kotlin'],
-    'Perl': ['Python', 'Go'], 'AngularJS': ['Angular', 'React', 'Vue.js'],
-    'COBOL': ['Java', 'Python', 'Cloud Architecture'], 'VBA': ['Python (Pandas)', 'JavaScript']
-}
-
-if risk_category in ["MODERATE RISK", "HIGH RISK"]:
-    st.error(f"**Warning:** {selected_skill} is exhibiting mathematical signals of market obsolescence.")
-    alternatives = tech_clusters.get(selected_skill, ['Cloud Architecture (AWS/Azure)', 'AI/ML Engineering', 'Go / Rust'])
-    st.info(f"**Strategic Upskilling Recommended:** Consider pivoting your learning path toward highly demanded adjacent skills such as: **{', '.join(alternatives)}**.")
+# Risk Score styling
+if risk >= 60:
+    risk_status = "🔴 High Risk"
+elif risk >= 30:
+    risk_status = "🟡 Moderate Risk"
 else:
-    st.success(f"**Favorable Outlook:** {selected_skill} shows robust market stability.")
-    st.info("Recommendation: Deepen your expertise in advanced design patterns, performance optimization, or integrate AI APIs within this ecosystem.")
+    risk_status = "🟢 Safe / Growing"
 
-st.caption("System architecture integrates XGBoost modeling, Cloud MySQL (TiDB), and Live API extrapolation.")
+m3.metric("Obsolescence Risk Score", f"{risk:.2f}%", risk_status, delta_color="off")
+
+# 8. Visual Graph & Actionable Insights
+col_chart, col_insights = st.columns([2, 1])
+
+with col_chart:
+    st.markdown("**Predicted Market Trajectory**")
+    # Clean Plotly Chart
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=["Current Year", "Year 1", "Year 2", "Year 3"],
+        y=[current_demand, current_demand + (slope*1), current_demand + (slope*2), forecast],
+        mode='lines+markers',
+        name='Demand Trend',
+        line=dict(color='#00FFAA' if slope > 0 else '#FF4444', width=3),
+        marker=dict(size=10)
+    ))
+    fig.update_layout(
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        yaxis=dict(title="Market Demand Index", range=[0, max(100, current_demand + 20)]),
+        margin=dict(l=0, r=0, t=30, b=0)
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+with col_insights:
+    st.markdown("**💡 Strategic Career Insights**")
+    st.info(f"**Domain Context:** {selected_skill} operates within the {selected_domain} sector.")
+    
+    if risk >= 60:
+        st.warning("⚠️ **Strategic Pivot Recommended.** This technology is showing significant market decay. Begin transitioning your expertise to modern alternatives within this domain.")
+    elif risk >= 30:
+        st.info("🔄 **Skill Maintenance Required.** Demand is plateauing or slightly declining. Pair this skill with a high-growth technology to remain competitive.")
+    else:
+        st.success("✅ **High-Value Asset.** This technology is experiencing stable or rapid growth. Deepen your expertise here as it provides strong career leverage.")
