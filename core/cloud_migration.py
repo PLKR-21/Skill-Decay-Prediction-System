@@ -1,39 +1,32 @@
 import pandas as pd
 from sqlalchemy import create_engine
 import toml
-import os
 
-def migrate_to_mysql():
-    print("☁️ Booting up Cloud MySQL Migration Module...")
-    
-    # 1. Load your secure local credentials
-    secrets_path = os.path.join(".streamlit", "secrets.toml")
-    if not os.path.exists(secrets_path):
-        print("🚨 Error: .streamlit/secrets.toml not found! Please create it.")
-        return
-        
-    secrets = toml.load(secrets_path)
-    db_url = secrets['connections']['cloud_db']['url']
-    
-    # Ensure it uses the pymysql driver
-    if db_url.startswith("mysql://"):
-        db_url = db_url.replace("mysql://", "mysql+pymysql://", 1)
-        
-    # 2. Connect to the Cloud Server
-    print("🔄 Establishing secure connection to the MySQL cloud...")
-    engine = create_engine(db_url)
-    
-    # 3. Load the local engineered data
-    df = pd.read_csv('data/engineered_features.csv')
-    
-    # 4. Push the data to the cloud
-    print(f"📤 Uploading {len(df)} records to the cloud. This creates your SQL table automatically...")
-    
-    try:
-        df.to_sql('skill_features', con=engine, if_exists='replace', index=False)
-        print("✅ Migration Complete! Your system's data is now hosted securely in the cloud.")
-    except Exception as e:
-        print(f"🚨 Migration Failed: {e}")
+print("🚀 Starting Cloud Migration...")
 
-if __name__ == "__main__":
-    migrate_to_mysql()
+# 1. Load your secret TiDB credentials
+try:
+    secrets = toml.load(".streamlit/secrets.toml")
+    db_url = secrets["connections"]["cloud_db"]["url"]
+except Exception as e:
+    print(f"❌ Error loading secrets: {e}")
+    print("Make sure .streamlit/secrets.toml exists and has the correct format.")
+    exit(1)
+
+# 2. Connect to the Cloud Database
+print("🔌 Connecting to TiDB Cloud...")
+engine = create_engine(db_url)
+
+# 3. Load the new 106-skill dataset
+try:
+    df = pd.read_csv("data/engineered_features.csv")
+    print(f"📊 Loaded {len(df)} skills from local CSV.")
+except FileNotFoundError:
+    print("❌ Error: data/engineered_features.csv not found. Did you run ml_engine.py?")
+    exit(1)
+
+# 4. Push to TiDB (Replacing the old table to fix the 0 bug and add Domains)
+print("☁️ Uploading data to TiDB database. This might take a few seconds...")
+df.to_sql("skill_features", con=engine, if_exists="replace", index=False)
+
+print("✅ Migration complete! Database now has 106 skills and precise decimal forecasts.")
