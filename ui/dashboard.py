@@ -64,10 +64,10 @@ st.divider()
 st.subheader(f"📊 Market Analysis: {selected_skill}")
 m1, m2, m3 = st.columns(3)
 
-# Format floats to 2 decimal places to guarantee the "0" bug is gone visually
-current_demand = float(skill_data['Job_Demand'])
-forecast = float(skill_data['3_Year_Forecast'])
-risk = float(skill_data['Risk_Score'])
+# 🚨 THE FIX: Enforce strict 0 to 100 limits on all data points
+current_demand = min(100.0, max(0.0, float(skill_data['Job_Demand'])))
+forecast = min(100.0, max(0.0, float(skill_data['3_Year_Forecast'])))
+risk = min(100.0, max(0.0, float(skill_data['Risk_Score'])))
 slope = float(skill_data['Trend_Slope'])
 
 m1.metric("Current Market Demand", f"{current_demand:.2f} / 100")
@@ -91,11 +91,16 @@ col_chart, col_insights = st.columns([2, 1])
 
 with col_chart:
     st.markdown("**Predicted Market Trajectory**")
+    
+    # Calculate capped intermediate years for the chart so lines don't break the ceiling
+    year1 = min(100.0, max(0.0, current_demand + (slope*1)))
+    year2 = min(100.0, max(0.0, current_demand + (slope*2)))
+    
     # Clean Plotly Chart
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=["Current Year", "Year 1", "Year 2", "Year 3"],
-        y=[current_demand, current_demand + (slope*1), current_demand + (slope*2), forecast],
+        y=[current_demand, year1, year2, forecast],
         mode='lines+markers',
         name='Demand Trend',
         line=dict(color='#00FFAA' if slope > 0 else '#FF4444', width=3),
@@ -104,7 +109,7 @@ with col_chart:
     fig.update_layout(
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        yaxis=dict(title="Market Demand Index", range=[0, max(100, current_demand + 20)]),
+        yaxis=dict(title="Market Demand Index", range=[0, 105]), # Locked Y-axis perfectly
         margin=dict(l=0, r=0, t=30, b=0)
     )
     st.plotly_chart(fig, use_container_width=True)
@@ -119,8 +124,6 @@ with col_insights:
         st.info("🔄 **Skill Maintenance Required.** Demand is plateauing or slightly declining. Pair this skill with a high-growth technology to remain competitive.")
     else:
         st.success("✅ **High-Value Asset.** This technology is experiencing stable or rapid growth. Deepen your expertise here as it provides strong career leverage.")
-
-st.divider()
 
 # 9. Live Google Trends API
 st.subheader(f"🌍 Live Global Market Pulse: {selected_skill}")
