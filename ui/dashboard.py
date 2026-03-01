@@ -3,6 +3,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 import plotly.graph_objects as go
 import numpy as np
+from serpapi import GoogleSearch
 
 # 1. Page Configuration (Makes it wide and sleek)
 st.set_page_config(page_title="Skill Decay Predictor", page_icon="🛡️", layout="wide")
@@ -31,7 +32,8 @@ def load_data():
 try:
     df = load_data()
 except Exception as e:
-    st.error("🚨 Could not connect to the database. Please check your secrets.toml file.")
+    # THIS is the critical change. It will now print the exact Python error!
+    st.error(f"🚨 System Error Details: {e}")
     st.stop()
 
 # 4. Header Section
@@ -117,3 +119,62 @@ with col_insights:
         st.info("🔄 **Skill Maintenance Required.** Demand is plateauing or slightly declining. Pair this skill with a high-growth technology to remain competitive.")
     else:
         st.success("✅ **High-Value Asset.** This technology is experiencing stable or rapid growth. Deepen your expertise here as it provides strong career leverage.")
+
+st.divider()
+
+# 9. Live Google Trends API
+st.subheader(f"🌍 Live Global Market Pulse: {selected_skill}")
+
+@st.cache_data(ttl=86400) # Caches for 24 hours to save API credits
+def get_live_google_trend(skill):
+    try:
+        api_key = st.secrets["api_keys"]["serpapi"]
+        params = {
+          "engine": "google_trends",
+          "q": skill,
+          "data_type": "TIMESERIES",
+          "api_key": api_key
+        }
+        
+        search = GoogleSearch(params)
+        results = search.get_dict()
+        
+        interest_over_time = results.get("interest_over_time", {})
+        timeline_data = interest_over_time.get("timeline_data", [])
+        
+        if not timeline_data:
+            return None
+            
+        dates = [item["date"] for item in timeline_data]
+        values = [item["values"][0]["extracted_value"] for item in timeline_data]
+        
+        return pd.DataFrame({"Date": dates, "Interest": values})
+        
+    except Exception as e:
+        return None
+
+with st.spinner(f"Fetching live global search data for {selected_skill}..."):
+    live_trend_df = get_live_google_trend(selected_skill)
+
+if live_trend_df is not None:
+    fig_live = go.Figure()
+    fig_live.add_trace(go.Scatter(
+        x=live_trend_df["Date"],
+        y=live_trend_df["Interest"],
+        mode='lines',
+        name='Google Search Interest',
+        line=dict(color='#0078FF', width=2),
+        fill='tozeroy',
+        fillcolor='rgba(0, 120, 255, 0.1)'
+    ))
+    fig_live.update_layout(
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        yaxis=dict(title="Relative Search Volume (0-100)"),
+        xaxis=dict(showgrid=False),
+        margin=dict(l=0, r=0, t=30, b=0),
+        height=300
+    )
+    st.plotly_chart(fig_live, use_container_width=True)
+else:
+    st.warning("⚠️ Live data temporarily unavailable. Showing AI forecast above.")
