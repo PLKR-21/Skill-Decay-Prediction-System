@@ -1,0 +1,14 @@
+# Security (CRITICAL: Keeps your database passwords off the internet)
+.streamlit/
+secrets.toml
+
+# Python Caches & Virtual Environments
+__pycache__/
+*.pyc
+decay_env/
+.venv/
+venv/
+env/
+
+# Data (Ignored because your data is now hosted in TiDB Cloud!)
+data/
