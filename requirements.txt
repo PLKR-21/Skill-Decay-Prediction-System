@@ -9,3 +9,4 @@ pytrends==4.9.2
 SQLAlchemy==2.0.28
 pymysql==1.1.0
 toml==0.10.2
+google-search-results==2.4.2
