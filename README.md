@@ -9,7 +9,7 @@ An enterprise-grade predictive analytics platform that tracks the real-world mar
 ## 🖥️ Dashboard Pages
 
 ### 🎯 Individual Skill Terminal
-Search any of the 84 tracked technologies and instantly get:
+Search any of the 109 tracked technologies and instantly get:
 - **Current Market Demand** — normalized 0-100 index based on real Stack Overflow activity
 - **Predicted 3-Year Demand (2027–2029)** — ARIMA model forecast with trend direction
 - **Obsolescence Risk Score** — 0-100% decay risk with visual risk classification
@@ -19,7 +19,7 @@ Search any of the 84 tracked technologies and instantly get:
 - **Live Global Search Pulse** — Google Trends integration (via SerpApi)
 
 ### 🌍 Global Market View
-Macro-level industry intelligence across all 84 skills:
+Macro-level industry intelligence across all 109 skills:
 - **KPI Summary Cards** — total skills tracked, growing count, high-risk count, top skill
 - **Top 10 Most In-Demand Skills** — ranked by real 2024 Stack Overflow question volume
 - **Top 10 Highest Risk Skills** — ranked by obsolescence risk score
