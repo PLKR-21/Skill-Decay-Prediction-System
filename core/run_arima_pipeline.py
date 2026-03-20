@@ -27,7 +27,21 @@ tech_domains = {
     'pandas': 'Data & AI', 'numpy': 'Data & AI', 'tensorflow': 'Data & AI', 'pytorch': 'Data & AI', 'scikit-learn': 'Data & AI',
     'hadoop': 'Data & AI', 'apache-spark': 'Data & AI', 'apache-kafka': 'Data & AI', 'snowflake': 'Data & AI', 'airflow': 'Data & AI',
     'cypress': 'Testing & Tools', 'selenium': 'Testing & Tools', 'jest': 'Testing & Tools', 'pytest': 'Testing & Tools', 
-    'mocha': 'Testing & Tools', 'figma': 'Testing & Tools', 'jira': 'Testing & Tools'
+    'mocha': 'Testing & Tools', 'figma': 'Testing & Tools', 'jira': 'Testing & Tools',
+    # Cloud additions
+    'vercel': 'Cloud & DevOps', 'netlify': 'Cloud & DevOps', 'pulumi': 'Cloud & DevOps', 'cloudflare': 'Cloud & DevOps',
+    # Database additions
+    'supabase': 'Databases', 'prisma': 'Databases', 'neo4j': 'Databases', 'clickhouse': 'Databases',
+    # Cybersecurity
+    'kali-linux': 'Cybersecurity', 'burp-suite': 'Cybersecurity', 'wireshark': 'Cybersecurity',
+    'splunk': 'Cybersecurity', 'ethical-hacking': 'Cybersecurity',
+    # Generative AI & LLMs
+    'langchain': 'Generative AI & LLMs', 'openai-api': 'Generative AI & LLMs', 'hugging-face': 'Generative AI & LLMs',
+    'llama': 'Generative AI & LLMs', 'stable-diffusion': 'Generative AI & LLMs', 'prompt-engineering': 'Generative AI & LLMs',
+    # Web3 & Blockchain
+    'solidity': 'Web3 & Blockchain', 'web3.js': 'Web3 & Blockchain', 'hardhat': 'Web3 & Blockchain',
+    # Game Dev
+    'unity': 'Game Dev', 'unreal-engine': 'Game Dev', 'godot': 'Game Dev'
 }
 
 def generate_production_data():

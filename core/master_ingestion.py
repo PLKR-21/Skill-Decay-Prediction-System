@@ -28,6 +28,20 @@ SO_TAG_MAP = {
     'redis': 'redis', 'sqlite': 'sqlite', 'elasticsearch': 'elasticsearch',
     'oracle': 'oracle', 'cassandra': 'cassandra', 'dynamodb': 'amazon-dynamodb',
     'firebase': 'firebase', 'aws': 'amazon-web-services', 'azure': 'azure',
+    # Cloud additions
+    'vercel': 'vercel', 'netlify': 'netlify', 'pulumi': 'pulumi', 'cloudflare': 'cloudflare',
+    # Database additions
+    'supabase': 'supabase', 'prisma': 'prisma', 'neo4j': 'neo4j', 'clickhouse': 'clickhouse',
+    # Cybersecurity
+    'kali-linux': 'kali-linux', 'burp-suite': 'burp-suite', 'wireshark': 'wireshark',
+    'splunk': 'splunk', 'ethical-hacking': 'ethical-hacking',
+    # Generative AI & LLMs
+    'langchain': 'langchain', 'openai-api': 'openai', 'hugging-face': 'huggingface-transformers',
+    'llama': 'llama.cpp', 'stable-diffusion': 'stable-diffusion', 'prompt-engineering': 'prompt-engineering',
+    # Web3 & Blockchain
+    'solidity': 'solidity', 'web3.js': 'web3js', 'hardhat': 'hardhat',
+    # Game Dev
+    'unity': 'unity3d', 'unreal-engine': 'unreal-engine', 'godot': 'godot',
     'google-cloud-platform': 'google-cloud-platform', 'docker': 'docker',
     'kubernetes': 'kubernetes', 'terraform': 'terraform', 'linux': 'linux',
     'git': 'git', 'jenkins': 'jenkins', 'github-actions': 'github-actions',
