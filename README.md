@@ -1,6 +1,6 @@
 # 🛡️ Skill Decay Prediction System
 
-An enterprise-grade predictive analytics platform that tracks the real-world market trajectory of **84 industry technologies** across 7 architectural domains. Powered by live Stack Overflow data, ARIMA time-series forecasting, and a cloud-native TiDB Serverless database.
+An enterprise-grade predictive analytics platform that tracks the real-world market trajectory of **109 industry technologies** across 10 architectural domains. Powered by live Stack Overflow data, ARIMA time-series forecasting, and a cloud-native TiDB Serverless database.
 
 > **Live Demo:** Streamlit Dashboard | **Data:** Stack Overflow Tag API (2020–2024) | **Forecast:** ARIMA 3-Year Model | **Currency:** INR
 
@@ -53,7 +53,7 @@ PyPI Stats + npm Registry       → master_ingestion.py
   TiDB Cloud DB                 → ui/dashboard.py
 ```
 
-**Run time:** ~8 minutes for all 84 skills (rate-limit safe, 0.3s delay per API call)
+**Run time:** ~10 minutes for all 109 skills (rate-limit safe, 0.3s delay per API call)
 
 ---
 
@@ -121,7 +121,7 @@ streamlit run ui/dashboard.py
 
 ---
 
-## 🌐 84 Tracked Technologies
+## 🌐 109 Tracked Technologies Across 10 Domains
 
 | Domain | Skills |
 |---|---|

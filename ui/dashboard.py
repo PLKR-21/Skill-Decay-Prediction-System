@@ -54,8 +54,8 @@ st.sidebar.markdown(
     🟢 **Status:** Live
     
     * **Engine:** ARIMA Forecasting
-    * **Scope:** 84 Industry Technologies
-    * **Sectors:** 7 Architectural Domains
+    * **Scope:** 109 Industry Technologies
+    * **Sectors:** 10 Architectural Domains
     * **Database:** TiDB Serverless
     """
 )
