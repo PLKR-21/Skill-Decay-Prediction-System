@@ -4,30 +4,24 @@ import os
 
 def generate_unified_dataset():
     # --- The 50+ Expanded Skill Dictionary ---
-    growing_skills = [
-        'Python', 'Rust', 'Go', 'TypeScript', 'Swift', 'Kotlin',
-        'React', 'Vue.js', 'Next.js', 'Tailwind CSS', 'FastAPI',
-        'Docker', 'Kubernetes', 'Terraform', 'AWS', 'Azure', 'Google Cloud',
-        'Pandas', 'TensorFlow', 'PyTorch', 'Snowflake', 'GraphQL', 'MongoDB'
+    skills = [
+        'python', 'javascript', 'java', 'c++', 'c#', 'rust', 'go', 'typescript', 'swift', 'kotlin',
+        'ruby', 'php', 'scala', 'r', 'dart', 'julia', 'objective-c', 'perl', 'lua', 'bash',
+        'reactjs', 'angular', 'vue.js', 'svelte', 'next.js', 'html', 'css', 'tailwind-css', 'bootstrap', 'jquery',
+        'node.js', 'django', 'flask', 'spring', 'laravel', 'fastapi', 'express', 'graphql', 'asp.net',
+        'react-native', 'flutter', 'android', 'ios', 'xamarin', 'ionic',
+        'mysql', 'postgresql', 'mongodb', 'redis', 'sqlite', 'elasticsearch', 'oracle', 'cassandra', 'dynamodb', 'firebase',
+        'aws', 'azure', 'google-cloud-platform', 'docker', 'kubernetes', 'terraform', 'linux', 'git', 'jenkins', 'github-actions', 'ansible', 'nginx',
+        'pandas', 'numpy', 'tensorflow', 'pytorch', 'scikit-learn', 'hadoop', 'apache-spark', 'apache-kafka', 'snowflake', 'airflow',
+        'cypress', 'selenium', 'jest', 'pytest', 'mocha', 'figma', 'jira'
     ]
-    
-    declining_skills = [
-        'jQuery', 'PHP', 'Ruby', 'Perl', 'Objective-C', 'VBA', 
-        'ColdFusion', 'COBOL', 'AngularJS', 'SVN', 'Ember.js', 'CoffeeScript',
-        'Knockout.js', 'VB.NET', 'ActionScript', 'Pascal'
-    ]
-    
-    stable_skills = [
-        'JavaScript', 'Java', 'C++', 'C#', 'SQL', 'HTML', 'CSS', 
-        'Bash', 'Linux', 'Git', 'Spring Boot', 'Django', 'Flask', 
-        'Node.js', 'Express.js', 'MySQL', 'PostgreSQL', 'Redis'
-    ]
-    
-    skills = growing_skills + declining_skills + stable_skills
+    growing_skills = skills[:40]
+    declining_skills = skills[40:60]
+    stable_skills = skills[60:]
     years = list(range(2015, 2026))
     data = []
 
-    print(f"⚙️ Booting up Data Processing Module for {len(skills)} skills...")
+    print(f"Booting up Data Processing Module for {len(skills)} skills...")
 
     for skill in skills:
         # Assign realistic historical trajectories
@@ -57,7 +51,7 @@ def generate_unified_dataset():
     if not os.path.exists('data'): os.makedirs('data')
     df.to_csv('data/unified_dataset.csv', index=False)
     
-    print(f"✅ Cleaned multi-source dataset created with {len(df)} records!")
+    print(f"Cleaned multi-source dataset created with {len(df)} records!")
     print("Dataset saved to: data/unified_dataset.csv")
 
 if __name__ == "__main__":
