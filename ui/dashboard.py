@@ -264,13 +264,94 @@ with col_chart:
 with col_insights:
     st.markdown("**💡 Strategic Career Insights**")
     st.info(f"**Domain Context:** {selected_skill} operates within the {selected_domain} sector. The estimated base salary for an expert in this technology is currently **₹{int(base_salary):,}/year**.")
-    
+
+    # ── Curated alternatives for declining / high-risk skills ──────────────
+    SKILL_ALTERNATIVES = {
+        # --- Web / Frontend ---
+        "jQuery":         ["React", "Vue.js", "Svelte"],
+        "AngularJS":      ["Angular (v14+)", "React", "Vue.js"],
+        "Flash":          ["HTML5 Canvas", "WebGL", "React"],
+        "Backbone.js":    ["React", "Vue.js", "Svelte"],
+        "CoffeeScript":   ["TypeScript", "JavaScript (ES2023+)"],
+        # --- Backend ---
+        "PHP":            ["Node.js", "Python (FastAPI)", "Go"],
+        "Perl":           ["Python", "Ruby", "Go"],
+        "SOAP":           ["REST APIs", "GraphQL", "gRPC"],
+        "XML":            ["JSON", "Protocol Buffers", "Apache Avro"],
+        "Monolithic Architecture": ["Microservices", "Serverless (AWS Lambda)", "Event-Driven Architecture"],
+        # --- Mobile ---
+        "React Native":   ["Flutter", "Kotlin Multiplatform", "Swift (iOS)"],
+        "Cordova":        ["Flutter", "React Native", "Capacitor"],
+        "Xamarin":        ["Flutter", "MAUI (.NET)", "Kotlin Multiplatform"],
+        # --- Data / ML ---
+        "Hadoop":         ["Apache Spark", "Databricks", "DuckDB"],
+        "MapReduce":      ["Apache Spark", "Apache Flink", "Databricks"],
+        "Hive":           ["Trino", "BigQuery", "Snowflake"],
+        "Theano":         ["PyTorch", "TensorFlow 2.x", "JAX"],
+        "Caffe":          ["PyTorch", "TensorFlow", "Keras"],
+        "SVMs":           ["XGBoost", "LightGBM", "Neural Networks (PyTorch)"],
+        # --- Cloud / DevOps ---
+        "On-Premise Servers": ["AWS EC2", "Azure VMs", "GCP Compute Engine"],
+        "SVN":            ["Git", "GitHub Actions", "GitLab CI"],
+        "Jenkins":        ["GitHub Actions", "GitLab CI/CD", "ArgoCD"],
+        "Chef":           ["Terraform", "Ansible", "Pulumi"],
+        "Puppet":         ["Terraform", "Ansible", "Helm"],
+        # --- Databases ---
+        "Microsoft Access": ["PostgreSQL", "SQLite", "MySQL"],
+        "CouchDB":        ["MongoDB", "Firebase Firestore", "Couchbase"],
+        "Oracle DB":      ["PostgreSQL", "CockroachDB", "TiDB"],
+        "Cassandra":      ["ScyllaDB", "DynamoDB", "CockroachDB"],
+        # --- Cybersecurity ---
+        "MD5 Hashing":    ["SHA-256", "Argon2", "bcrypt"],
+        "WEP Encryption": ["WPA3", "TLS 1.3", "Zero-Trust Architecture"],
+        # --- Blockchain / Web3 ---
+        "Bitcoin Script": ["Solidity (Ethereum)", "Rust (Solana)", "Move (Aptos)"],
+        "EOS":            ["Solana", "Polkadot", "Avalanche"],
+        # --- Game Dev ---
+        "Flash Games":    ["Unity (C#)", "Unreal Engine", "Godot"],
+        "DirectX 9":      ["DirectX 12", "Vulkan", "Metal (Apple)"],
+    }
+
+    alternatives = SKILL_ALTERNATIVES.get(selected_skill, [])
+
     if risk >= 60:
-        st.warning(f"⚠️ **Strategic Pivot Recommended.** This technology is showing significant market decay. You face an estimated **{salary_impact_str}** salary penalty over the next 3 years if you do not adapt. Begin transitioning your expertise to modern alternatives within this domain.")
+        msg = (f"⚠️ **Strategic Pivot Recommended.** This technology is showing significant "
+               f"market decay. You face an estimated **{salary_impact_str}** salary penalty "
+               f"over the next 3 years if you do not adapt.")
+        if alternatives:
+            alt_str = ", ".join(f"**{a}**" for a in alternatives)
+            msg += f" Consider pivoting to: {alt_str}."
+        else:
+            msg += " Begin transitioning your expertise to modern alternatives within this domain."
+        st.warning(msg)
+
     elif risk >= 30:
-        st.info(f"🔄 **Skill Maintenance Required.** Demand is plateauing or slightly declining, reflecting a **{salary_impact_str}** salary impact pipeline. Pair this skill with a high-growth technology to remain competitive.")
+        msg = (f"🔄 **Skill Maintenance Required.** Demand is plateauing or slightly declining, "
+               f"reflecting a **{salary_impact_str}** salary impact pipeline.")
+        if alternatives:
+            alt_str = ", ".join(f"**{a}**" for a in alternatives)
+            msg += f" Pair this skill with rising technologies such as {alt_str} to remain competitive."
+        else:
+            msg += " Pair this skill with a high-growth technology to remain competitive."
+        st.info(msg)
+
+    elif slope > 0:
+        # Low risk AND actively growing → genuine "deepen expertise" advice
+        st.success(f"✅ **High-Value Asset.** This technology is experiencing rapid growth, "
+                   f"potentially adding **{salary_impact_str}** to your market value. "
+                   f"Deepen your expertise here — it provides strong career leverage.")
+
     else:
-        st.success(f"✅ **High-Value Asset.** This technology is experiencing stable or rapid growth, potentially adding **{salary_impact_str}** to your market value. Deepen your expertise here as it provides strong career leverage.")
+        # Low risk but flat / mildly declining slope → nuanced advice
+        msg = (f"📊 **Stable but Softening.** Risk remains low, but demand growth has stalled "
+               f"(slope: {slope:.2f}). The near-term salary outlook is **{salary_impact_str}**.")
+        if alternatives:
+            alt_str = ", ".join(f"**{a}**" for a in alternatives)
+            msg += f" To future-proof your profile, consider complementing with {alt_str}."
+        else:
+            msg += (" Complement this skill with emerging technologies in the "
+                    f"{selected_domain} domain to stay ahead of the curve.")
+        st.info(msg)
 
 # 9. Live Google Trends API
 st.subheader(f"🌍 Live Global Market Pulse: {selected_skill}")
