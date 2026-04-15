@@ -24,7 +24,7 @@ try:
     df = pd.read_csv("data/production_forecast.csv")
     print(f"Loaded {len(df)} skills from local CSV.")
 except FileNotFoundError:
-    print("Error: data/production_forecast.csv not found. Did you run run_arima_pipeline.py?")
+    print("Error: data/production_forecast.csv not found. Did you run run_xgboost_pipeline.py?")
     exit(1)
 
 # 4. Push to TiDB (Replacing the old table to fix the 0 bug and add Domains)

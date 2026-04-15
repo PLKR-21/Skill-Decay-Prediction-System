@@ -53,7 +53,7 @@ st.sidebar.markdown(
     ### ⚙️ System Telemetry
     🟢 **Status:** Live
     
-    * **Engine:** ARIMA Forecasting
+    * **Engine:** XGBoost Forecasting
     * **Scope:** 109 Industry Technologies
     * **Sectors:** 10 Architectural Domains
     * **Database:** TiDB Serverless
@@ -62,7 +62,7 @@ st.sidebar.markdown(
 
 if page == "🌍 Global Market View":
     st.subheader("🌍 Global Market Intelligence Dashboard")
-    st.markdown("Real-world IT market analysis powered by **Stack Overflow Tag Data (2020–2024)** across 84 technologies and 7 domains.")
+    st.markdown("Real-world IT market analysis powered by **Stack Overflow Tag Data (2020–2026)** across 84 technologies and 7 domains.")
     st.divider()
 
     # ── Prep normalized columns ───────────────────────────────────────────
@@ -89,10 +89,10 @@ if page == "🌍 Global Market View":
     col_top, col_bot = st.columns(2)
 
     with col_top:
-        st.markdown("#### 🚀 Top 10 Most In-Demand Skills (2024)")
+        st.markdown("#### 🚀 Top 10 Most In-Demand Skills (2026)")
         top10 = df.nlargest(10, 'Job_Demand')[['Skill_Name', 'Domain', 'Job_Demand']].copy()
-        top10['Stack Overflow Questions (2024)'] = top10['Job_Demand'].apply(lambda x: f"{int(x):,}")
-        top10 = top10[['Skill_Name', 'Domain', 'Stack Overflow Questions (2024)']].rename(columns={'Skill_Name': 'Skill'})
+        top10['Stack Overflow Questions (2026)'] = top10['Job_Demand'].apply(lambda x: f"{int(x):,}")
+        top10 = top10[['Skill_Name', 'Domain', 'Stack Overflow Questions (2026)']].rename(columns={'Skill_Name': 'Skill'})
         st.dataframe(top10.reset_index(drop=True), use_container_width=True)
 
     with col_bot:
@@ -119,7 +119,7 @@ if page == "🌍 Global Market View":
         color='Avg_Risk',
         color_continuous_scale='RdYlGn_r',
         text=domain_df['Avg_Demand'].apply(lambda x: f"{int(x):,}"),
-        labels={'Avg_Demand': 'Avg SO Questions (2024)', 'Avg_Risk': 'Risk %'},
+        labels={'Avg_Demand': 'Avg SO Questions (2026)', 'Avg_Risk': 'Risk %'},
         template='plotly_dark',
         title='Average Stack Overflow Activity per Domain (colored by risk)'
     )
@@ -157,7 +157,7 @@ if page == "🌍 Global Market View":
                                showarrow=False, font=dict(color='salmon', size=11))
     fig_bubble.update_traces(marker=dict(line=dict(width=1, color='DarkSlateGrey')))
     fig_bubble.update_layout(
-        xaxis_title="Current Demand Index (2024)",
+        xaxis_title="Current Demand Index (2026)",
         yaxis_title="Predicted Demand Index (2029)",
         height=620,
         plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)'
@@ -188,7 +188,7 @@ st.divider()
 
 # 7. Core Metrics Display
 st.subheader(f"📊 Market Analysis: {selected_skill}")
-m1, m2, m3, m4 = st.columns(4)
+m1, m2, m3 = st.columns(3)
 
 # 🚨 THE FIX: Normalize data points relative to the highest demand in the market
 max_demand = max(1.0, float(df['Job_Demand'].max()))
@@ -196,25 +196,6 @@ current_demand = (max(0.0, float(skill_data['Job_Demand'])) / max_demand) * 100.
 forecast = (max(0.0, float(skill_data['3_Year_Forecast'])) / max_demand) * 100.0
 slope = (float(skill_data['Trend_Slope']) / max_demand) * 100.0
 risk = min(100.0, max(0.0, float(skill_data['Risk_Score'])))
-
-# --- Salary Impact Calculation (INR) ---
-# Base salary range in INR: ₹6,00,000 – ₹14,00,000/year
-INR_RATE = 83.5
-base_salary = (80000 + (current_demand * 600)) * INR_RATE
-penalty_percentage = (risk / 100.0) * 0.20  # Up to 20% salary hit for high risk
-salary_impact = -1 * (base_salary * penalty_percentage)
-
-if risk < 30 and slope > 0:
-    reward_percentage = (slope / 10.0) * 0.10  # Up to 10% gain for high growth
-    salary_impact = base_salary * reward_percentage
-
-if salary_impact > 10000:
-    salary_impact_str = f"+₹{int(salary_impact):,}"
-elif salary_impact < -10000:
-    salary_impact_str = f"-₹{abs(int(salary_impact)):,}"
-else:
-    salary_impact_str = "Stable"
-# ---------------------------------
 
 m1.metric("Current Market Demand", f"{current_demand:.2f} / 100")
 
@@ -231,7 +212,6 @@ else:
     risk_status = "🟢 Safe / Growing"
 
 m3.metric("Obsolescence Risk", f"{risk:.2f}%", risk_status, delta_color="off")
-m4.metric("Est. 3-Yr Salary Impact", f"₹{int(base_salary + salary_impact):,}", salary_impact_str, delta_color="normal")
 
 # 8. Visual Graph & Actionable Insights
 col_chart, col_insights = st.columns([2, 1])
@@ -262,8 +242,8 @@ with col_chart:
     st.plotly_chart(fig, use_container_width=True)
 
 with col_insights:
-    st.markdown("**💡 Strategic Career Insights**")
-    st.info(f"**Domain Context:** {selected_skill} operates within the {selected_domain} sector. The estimated base salary for an expert in this technology is currently **₹{int(base_salary):,}/year**.")
+    st.markdown("**💡 Technology Adoption Strategy**")
+    st.info(f"**Domain Context:** {selected_skill} operates within the **{selected_domain}** sector.")
 
     # ── Curated alternatives for declining / high-risk skills ──────────────
     SKILL_ALTERNATIVES = {
@@ -316,40 +296,38 @@ with col_insights:
 
     if risk >= 60:
         msg = (f"⚠️ **Strategic Pivot Recommended.** This technology is showing significant "
-               f"market decay. You face an estimated **{salary_impact_str}** salary penalty "
-               f"over the next 3 years if you do not adapt.")
+               f"market decay in adoption. It is highly recommended to adapt.")
         if alternatives:
             alt_str = ", ".join(f"**{a}**" for a in alternatives)
-            msg += f" Consider pivoting to: {alt_str}."
+            msg += f" Consider pivoting to modern stack tools: {alt_str}."
         else:
-            msg += " Begin transitioning your expertise to modern alternatives within this domain."
+            msg += " Begin transitioning your architecture or stack to modern alternatives within this domain."
         st.warning(msg)
 
     elif risk >= 30:
-        msg = (f"🔄 **Skill Maintenance Required.** Demand is plateauing or slightly declining, "
-               f"reflecting a **{salary_impact_str}** salary impact pipeline.")
+        msg = (f"🔄 **Ecosystem Maintenance Required.** Demand is plateauing or slightly declining.")
         if alternatives:
             alt_str = ", ".join(f"**{a}**" for a in alternatives)
-            msg += f" Pair this skill with rising technologies such as {alt_str} to remain competitive."
+            msg += f" Pair this technology with rising alternatives such as {alt_str} to remain resilient."
         else:
-            msg += " Pair this skill with a high-growth technology to remain competitive."
+            msg += " Pair this tech with high-growth technologies to remain fully competitive."
         st.info(msg)
 
     elif slope > 0:
         # Low risk AND actively growing → genuine "deepen expertise" advice
-        st.success(f"✅ **High-Value Asset.** This technology is experiencing rapid growth, "
-                   f"potentially adding **{salary_impact_str}** to your market value. "
-                   f"Deepen your expertise here — it provides strong career leverage.")
+        st.success(f"✅ **High-Growth Asset.** This technology is experiencing rapid market growth. "
+                   f"Focus on deep integration and advanced capabilities here — it provides strong leverage "
+                   f"for future-proofing architectures.")
 
     else:
         # Low risk but flat / mildly declining slope → nuanced advice
         msg = (f"📊 **Stable but Softening.** Risk remains low, but demand growth has stalled "
-               f"(slope: {slope:.2f}). The near-term salary outlook is **{salary_impact_str}**.")
+               f"(momentum: {slope:.2f}).")
         if alternatives:
             alt_str = ", ".join(f"**{a}**" for a in alternatives)
-            msg += f" To future-proof your profile, consider complementing with {alt_str}."
+            msg += f" To future-proof the technology profile, consider complementing with {alt_str}."
         else:
-            msg += (" Complement this skill with emerging technologies in the "
+            msg += (" Complement this system with emerging technologies in the "
                     f"{selected_domain} domain to stay ahead of the curve.")
         st.info(msg)
 

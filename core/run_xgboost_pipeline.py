@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import warnings
-from statsmodels.tsa.arima.model import ARIMA
+import xgboost as xgb
 import os
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
@@ -45,10 +45,10 @@ tech_domains = {
 }
 
 def generate_production_data():
-    print("Booting ARIMA Production Pipeline...")
+    print("Booting XGBoost Production Pipeline...")
     
     if not os.path.exists('data/unified_dataset.csv'):
-        print("Error: Need historical data first!")
+        print("Error: Need historical data first! Run master_ingestion.py")
         return
 
     df = pd.read_csv('data/unified_dataset.csv')
@@ -57,24 +57,36 @@ def generate_production_data():
     production_data = []
 
     for skill in skills:
-        print(f"Running ARIMA forecast for: {skill.upper()}")
+        print(f"Running XGBoost forecast for: {skill.upper()}")
         
         # Get historical 5-year data
         skill_df = df[df['Skill'] == skill].sort_values('Year')
         ts_values = skill_df['Job_Demand'].values
-        current_demand = ts_values[-1] # 2025 Value
         
-        # Fit ARIMA on all 5 years
-        try:
-            model = ARIMA(ts_values, order=(1, 1, 0))
-            fit_model = model.fit()
+        if len(ts_values) == 0:
+            continue
             
-            # Forecast 3 years into the future (2026, 2027, 2028)
-            forecasts = fit_model.forecast(steps=3)
-            future_forecast = forecasts[-1] # 2028 Value
+        current_demand = ts_values[-1] # Usually 2024 value
+        
+        # We use Year index for XGBoost (e.g., 1, 2, 3, 4, 5)
+        # Using numpy ranges based on the available data size to be safe
+        n_points = len(ts_values)
+        X_train = np.arange(1, n_points + 1).reshape(-1, 1)
+        y_train = ts_values
+        
+        # Forecast 3 years into the future
+        X_test = np.arange(n_points + 1, n_points + 4).reshape(-1, 1)
+        
+        try:
+            # booster='gblinear' operates like a regularized linear model, allowing extrapolation for future time steps!
+            model = xgb.XGBRegressor(booster='gblinear', objective='reg:squarederror')
+            model.fit(X_train, y_train)
+            
+            future_forecasts = model.predict(X_test)
+            future_forecast = future_forecasts[-1] # Forecast for Year 8 (3 years out)
             
         except Exception as e:
-            print(f"Fallback for {skill}. ARIMA failed.")
+            print(f"Fallback for {skill}. XGBoost failed. Error: {e}")
             future_forecast = current_demand
             
         # UI Metrics Calculations
@@ -96,7 +108,7 @@ def generate_production_data():
             "Skill_Name": skill,
             "Domain": domain,
             "Job_Demand": float(current_demand),
-            "Trend_Slope": float(trend_slope),
+            "Trend_Slope": float(trend_slope), # Linear slope extracted from gblinear
             "3_Year_Forecast": float(max(0, future_forecast)), # Prevent negative forecast
             "Risk_Score": float(risk_score)
         })
@@ -105,7 +117,7 @@ def generate_production_data():
     
     # Save the golden production dataset
     prod_df.to_csv('data/production_forecast.csv', index=False)
-    print("\nSuccessfully generated ARIMA forecasts!")
+    print("\nSuccessfully generated XGBoost forecasts!")
     print("Saved to: data/production_forecast.csv")
     print(prod_df.head())
 
