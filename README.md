@@ -13,7 +13,6 @@ Search any of the 109 tracked technologies and instantly get:
 - **Current Market Demand** — normalized 0-100 index based on real Stack Overflow activity (supplemented by PyPI/npm downloads)
 - **Predicted 3-Year Demand (2026–2028)** — XGBoost model forecast with trend direction
 - **Obsolescence Risk Score** — 0-100% decay risk with visual risk classification
-- **Estimated 3-Year Salary Impact** — projected salary in INR based on demand trajectory
 - **Predicted Market Trajectory Chart** — interactive Plotly line chart (2025 → 2028)
 - **Strategic Career Insights** — actionable guidance based on risk level
 - **Live Global Search Pulse** — Google Trends integration (via SerpApi)
