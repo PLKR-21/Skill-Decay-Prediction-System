@@ -81,7 +81,20 @@ YEARS = {
     '2022': (1640995200, 1672531199),
     '2023': (1672531200, 1704067199),
     '2024': (1704067200, 1735689599),
+    '2025': (1735689600, 1767225599),
 }
+
+# Load optional Stack Exchange API key
+SO_API_KEY = None
+if os.path.exists(".streamlit/secrets.toml"):
+    try:
+        import toml
+        secrets = toml.load(".streamlit/secrets.toml")
+        SO_API_KEY = secrets.get("api_keys", {}).get("stackexchange", None)
+    except Exception:
+        pass
+if not SO_API_KEY:
+    SO_API_KEY = os.environ.get("STACKEXCHANGE_API_KEY", None)
 
 def fetch_so_tag(tag, fromdate, todate):
     """Fetch total Stack Overflow questions for a tag in a year range."""
@@ -90,11 +103,32 @@ def fetch_so_tag(tag, fromdate, todate):
         f"?fromdate={fromdate}&todate={todate}"
         f"&tagged={tag}&site=stackoverflow&filter=total"
     )
+    if SO_API_KEY:
+        url += f"&key={SO_API_KEY}"
+        
     try:
-        resp = requests.get(url, timeout=10).json()
-        return resp.get('total', 0)
-    except:
-        return 0
+        resp = requests.get(url, timeout=10)
+        if resp.status_code != 200:
+            print(f"⚠️ Error: Stack Overflow API returned status code {resp.status_code} for tag {tag}")
+            try:
+                data = resp.json()
+                if "error_message" in data:
+                    print(f"🔴 API Error Message: {data['error_message']}")
+                    raise RuntimeError(f"Stack Overflow API Error: {data['error_message']}")
+            except Exception:
+                pass
+            raise RuntimeError(f"HTTP error {resp.status_code}")
+            
+        data = resp.json()
+        if 'total' not in data:
+            if 'error_message' in data:
+                raise RuntimeError(f"API Rate Limit or Error: {data['error_message']}")
+            raise ValueError("No 'total' key in API response")
+            
+        return data['total']
+    except Exception as e:
+        print(f"🔴 Ingestion Failed for tag {tag}: {e}")
+        raise e
 
 def fetch_pypi_monthly(package):
     """Fetch last 6 months total downloads from PyPI Stats."""
@@ -117,7 +151,7 @@ def fetch_npm_monthly(package):
 
 def run_real_ingestion():
     """
-    Main pipeline: fetch real 5-year StackOverflow question data for all 84 skills.
+    Main pipeline: fetch real 6-year StackOverflow question data for all 109 skills.
     Supplements with PyPI/npm download signals for ecosystem-specific skills.
     """
     skills = list(SO_TAG_MAP.keys())
@@ -154,10 +188,10 @@ def run_real_ingestion():
 
     df = pd.DataFrame(records)
 
-    # Compute a unified Job_Demand: latest year SO + 10% of downloads
-    df['Job_Demand'] = df['SO_2024'] + (df['PyPI_Monthly'] * 0.0001).astype(int) + (df['NPM_Monthly'] * 0.0001).astype(int)
+    # Compute a unified Job_Demand: latest year SO + downloads boost
+    df['Job_Demand'] = df['SO_2025'] + (df['PyPI_Monthly'] * 0.0001).astype(int) + (df['NPM_Monthly'] * 0.0001).astype(int)
 
-    # Build unified_dataset format (skill x year rows) for ARIMA
+    # Build unified_dataset format (skill x year rows) for forecasting
     rows = []
     for _, r in df.iterrows():
         for year in YEARS.keys():
@@ -176,8 +210,8 @@ def run_real_ingestion():
     df.to_csv('data/raw_real_data.csv', index=False)
 
     print("-" * 60)
-    print(f"Done! Saved {len(skills)} skills x 5 years = {len(unified_df)} records.")
-    print("Output: data/unified_dataset.csv (for ARIMA) + data/raw_real_data.csv (raw)")
+    print(f"Done! Saved {len(skills)} skills x {len(YEARS)} years = {len(unified_df)} records.")
+    print("Output: data/unified_dataset.csv (for XGBoost) + data/raw_real_data.csv (raw)")
 
 if __name__ == "__main__":
     run_real_ingestion()

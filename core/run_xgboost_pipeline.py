@@ -54,22 +54,35 @@ def generate_production_data():
     df = pd.read_csv('data/unified_dataset.csv')
     skills = df['Skill'].unique()
     
+    raw_df = None
+    if os.path.exists('data/raw_real_data.csv'):
+        raw_df = pd.read_csv('data/raw_real_data.csv')
+        print("Loaded ecosystem download details from data/raw_real_data.csv")
+    
     production_data = []
 
     for skill in skills:
         print(f"Running XGBoost forecast for: {skill.upper()}")
         
-        # Get historical 5-year data
+        # Get historical data
         skill_df = df[df['Skill'] == skill].sort_values('Year')
         ts_values = skill_df['Job_Demand'].values
         
         if len(ts_values) == 0:
             continue
             
-        current_demand = ts_values[-1] # Usually 2024 value
+        # Get PyPI/NPM download boost
+        download_boost = 0
+        if raw_df is not None:
+            skill_raw = raw_df[raw_df['Skill'] == skill]
+            if not skill_raw.empty:
+                pypi = int(skill_raw.get('PyPI_Monthly', pd.Series([0])).values[0])
+                npm = int(skill_raw.get('NPM_Monthly', pd.Series([0])).values[0])
+                download_boost = int(pypi * 0.0001) + int(npm * 0.0001)
         
-        # We use Year index for XGBoost (e.g., 1, 2, 3, 4, 5)
-        # Using numpy ranges based on the available data size to be safe
+        current_demand_with_boost = ts_values[-1] + download_boost
+        
+        # We use Year index for XGBoost (e.g., 1, 2, 3, 4, 5, 6)
         n_points = len(ts_values)
         X_train = np.arange(1, n_points + 1).reshape(-1, 1)
         y_train = ts_values
@@ -83,20 +96,21 @@ def generate_production_data():
             model.fit(X_train, y_train)
             
             future_forecasts = model.predict(X_test)
-            future_forecast = future_forecasts[-1] # Forecast for Year 8 (3 years out)
+            future_forecast = future_forecasts[-1] # Forecast for 3 years out
             
         except Exception as e:
             print(f"Fallback for {skill}. XGBoost failed. Error: {e}")
-            future_forecast = current_demand
+            future_forecast = ts_values[-1]
             
+        future_forecast_with_boost = max(0.0, future_forecast + download_boost)
+        
         # UI Metrics Calculations
         # 1. Trend Slope (Average growth per year over the next 3 years)
-        trend_slope = (future_forecast - current_demand) / 3.0
+        trend_slope = (future_forecast_with_boost - current_demand_with_boost) / 3.0
         
         # 2. Risk Score (0 to 100%)
-        # If demand is falling, risk is the % drop. If stable/growing, risk is low.
-        if future_forecast < current_demand and current_demand > 0:
-            drop_percentage = ((current_demand - future_forecast) / current_demand) * 100.0
+        if future_forecast_with_boost < current_demand_with_boost and current_demand_with_boost > 0:
+            drop_percentage = ((current_demand_with_boost - future_forecast_with_boost) / current_demand_with_boost) * 100.0
             risk_score = min(100.0, drop_percentage * 1.5) # Add a 1.5x multiplier to make decays more obvious
         else:
             risk_score = 5.0 # Baseline low risk for stable/growing tech
@@ -107,9 +121,9 @@ def generate_production_data():
         production_data.append({
             "Skill_Name": skill,
             "Domain": domain,
-            "Job_Demand": float(current_demand),
-            "Trend_Slope": float(trend_slope), # Linear slope extracted from gblinear
-            "3_Year_Forecast": float(max(0, future_forecast)), # Prevent negative forecast
+            "Job_Demand": float(current_demand_with_boost),
+            "Trend_Slope": float(trend_slope), 
+            "3_Year_Forecast": float(future_forecast_with_boost), 
             "Risk_Score": float(risk_score)
         })
 
@@ -117,7 +131,7 @@ def generate_production_data():
     
     # Save the golden production dataset
     prod_df.to_csv('data/production_forecast.csv', index=False)
-    print("\nSuccessfully generated XGBoost forecasts!")
+    print("\nSuccessfully generated XGBoost forecasts with ecosystem boosts!")
     print("Saved to: data/production_forecast.csv")
     print(prod_df.head())
 

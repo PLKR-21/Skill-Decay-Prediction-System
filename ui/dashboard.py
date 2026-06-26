@@ -49,20 +49,20 @@ st.sidebar.header("Navigation")
 page = st.sidebar.radio("Go to:", ["🎯 Individual Skill Terminal", "🌍 Global Market View"])
 st.sidebar.divider()
 st.sidebar.markdown(
-    """
+    f"""
     ### ⚙️ System Telemetry
     🟢 **Status:** Live
     
     * **Engine:** XGBoost Forecasting
-    * **Scope:** 109 Industry Technologies
-    * **Sectors:** 10 Architectural Domains
+    * **Scope:** {len(df)} Industry Technologies
+    * **Sectors:** {df['Domain'].nunique()} Architectural Domains
     * **Database:** TiDB Serverless
     """
 )
 
 if page == "🌍 Global Market View":
     st.subheader("🌍 Global Market Intelligence Dashboard")
-    st.markdown("Real-world IT market analysis powered by **Stack Overflow Tag Data (2020–2026)** across 84 technologies and 7 domains.")
+    st.markdown(f"Real-world IT market analysis powered by **Stack Overflow Tag Data (2020–2025)** across **{len(df)} technologies** and **{df['Domain'].nunique()} domains**.")
     st.divider()
 
     # ── Prep normalized columns ───────────────────────────────────────────
@@ -89,10 +89,10 @@ if page == "🌍 Global Market View":
     col_top, col_bot = st.columns(2)
 
     with col_top:
-        st.markdown("#### 🚀 Top 10 Most In-Demand Skills (2026)")
+        st.markdown("#### 🚀 Top 10 Most In-Demand Skills (2025)")
         top10 = df.nlargest(10, 'Job_Demand')[['Skill_Name', 'Domain', 'Job_Demand']].copy()
-        top10['Stack Overflow Questions (2026)'] = top10['Job_Demand'].apply(lambda x: f"{int(x):,}")
-        top10 = top10[['Skill_Name', 'Domain', 'Stack Overflow Questions (2026)']].rename(columns={'Skill_Name': 'Skill'})
+        top10['Stack Overflow Questions (2025)'] = top10['Job_Demand'].apply(lambda x: f"{int(x):,}")
+        top10 = top10[['Skill_Name', 'Domain', 'Stack Overflow Questions (2025)']].rename(columns={'Skill_Name': 'Skill'})
         st.dataframe(top10.reset_index(drop=True), use_container_width=True)
 
     with col_bot:
@@ -119,7 +119,7 @@ if page == "🌍 Global Market View":
         color='Avg_Risk',
         color_continuous_scale='RdYlGn_r',
         text=domain_df['Avg_Demand'].apply(lambda x: f"{int(x):,}"),
-        labels={'Avg_Demand': 'Avg SO Questions (2026)', 'Avg_Risk': 'Risk %'},
+        labels={'Avg_Demand': 'Avg SO Questions (2025)', 'Avg_Risk': 'Risk %'},
         template='plotly_dark',
         title='Average Stack Overflow Activity per Domain (colored by risk)'
     )
@@ -133,8 +133,8 @@ if page == "🌍 Global Market View":
     st.divider()
 
     # ── Section 4: Bubble Chart (Demand vs Forecast) ──────────────────────
-    st.markdown("#### 🔵 Industry Scale Tracking Matrix — All 84 Skills")
-    st.caption("X = Current demand | Y = Predicted 2029 demand | Bubble size = obsolescence risk")
+    st.markdown(f"#### 🔵 Industry Scale Tracking Matrix — All {len(df)} Skills")
+    st.caption("X = Current demand (2025) | Y = Predicted 2028 demand | Bubble size = obsolescence risk")
 
     fig_bubble = px.scatter(
         df,
@@ -157,8 +157,8 @@ if page == "🌍 Global Market View":
                                showarrow=False, font=dict(color='salmon', size=11))
     fig_bubble.update_traces(marker=dict(line=dict(width=1, color='DarkSlateGrey')))
     fig_bubble.update_layout(
-        xaxis_title="Current Demand Index (2026)",
-        yaxis_title="Predicted Demand Index (2029)",
+        xaxis_title="Current Demand Index (2025)",
+        yaxis_title="Predicted Demand Index (2028)",
         height=620,
         plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)'
     )
@@ -226,7 +226,7 @@ with col_chart:
     # Clean Plotly Chart
     fig = go.Figure()
     fig.add_trace(go.Scatter(
-        x=["2026 (Current)", "2027", "2028", "2029"],
+        x=["2025 (Actual)", "2026", "2027", "2028"],
         y=[current_demand, year1, year2, forecast],
         mode='lines+markers',
         name='Demand Trend',

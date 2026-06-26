@@ -19,7 +19,7 @@ except Exception as e:
 print("Connecting to TiDB Cloud...")
 engine = create_engine(db_url)
 
-# 3. Load the new 106-skill dataset
+# 3. Load the new skill dataset
 try:
     df = pd.read_csv("data/production_forecast.csv")
     print(f"Loaded {len(df)} skills from local CSV.")
@@ -31,4 +31,4 @@ except FileNotFoundError:
 print("Uploading data to TiDB database. This might take a few seconds...")
 df.to_sql("skill_features", con=db_url, if_exists="replace", index=False)
 
-print("Migration complete! Database now has 106 skills and precise decimal forecasts.")
+print(f"Migration complete! Database now has {len(df)} skills and precise decimal forecasts.")

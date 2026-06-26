@@ -1,8 +1,8 @@
 # 🛡️ Skill Decay Prediction System
 
-An enterprise-grade predictive analytics platform that tracks the real-world market trajectory of **109 industry technologies** across 10 architectural domains. Powered by live Stack Overflow data, ARIMA time-series forecasting, and a cloud-native TiDB Serverless database.
+An enterprise-grade predictive analytics platform that tracks the real-world market trajectory of **109 industry technologies** across 12 architectural domains. Powered by live Stack Overflow data, XGBoost time-series forecasting, and a cloud-native TiDB Serverless database.
 
-> **Live Demo:** Streamlit Dashboard | **Data:** Stack Overflow Tag API (2020–2024) | **Forecast:** ARIMA 3-Year Model | **Currency:** INR
+> **Live Demo:** Streamlit Dashboard | **Data:** Stack Overflow Tag API (2020–2025) | **Forecast:** XGBoost 3-Year Model | **Currency:** INR
 
 ---
 
@@ -10,21 +10,21 @@ An enterprise-grade predictive analytics platform that tracks the real-world mar
 
 ### 🎯 Individual Skill Terminal
 Search any of the 109 tracked technologies and instantly get:
-- **Current Market Demand** — normalized 0-100 index based on real Stack Overflow activity
-- **Predicted 3-Year Demand (2027–2029)** — ARIMA model forecast with trend direction
+- **Current Market Demand** — normalized 0-100 index based on real Stack Overflow activity (supplemented by PyPI/npm downloads)
+- **Predicted 3-Year Demand (2026–2028)** — XGBoost model forecast with trend direction
 - **Obsolescence Risk Score** — 0-100% decay risk with visual risk classification
 - **Estimated 3-Year Salary Impact** — projected salary in INR based on demand trajectory
-- **Predicted Market Trajectory Chart** — interactive Plotly line chart (2026 → 2029)
+- **Predicted Market Trajectory Chart** — interactive Plotly line chart (2025 → 2028)
 - **Strategic Career Insights** — actionable guidance based on risk level
 - **Live Global Search Pulse** — Google Trends integration (via SerpApi)
 
 ### 🌍 Global Market View
 Macro-level industry intelligence across all 109 skills:
 - **KPI Summary Cards** — total skills tracked, growing count, high-risk count, top skill
-- **Top 10 Most In-Demand Skills** — ranked by real 2024 Stack Overflow question volume
+- **Top 10 Most In-Demand Skills** — ranked by real 2025 Stack Overflow question volume
 - **Top 10 Highest Risk Skills** — ranked by obsolescence risk score
 - **Domain Demand Bar Chart** — average market activity per architectural domain, color-coded by risk
-- **Industry Scale Tracking Matrix** — interactive bubble chart (all 84 skills); above diagonal = growing, below = declining
+- **Industry Scale Tracking Matrix** — interactive bubble chart (all 109 skills); above diagonal = growing, below = declining
 
 ---
 
@@ -33,7 +33,7 @@ Macro-level industry intelligence across all 109 skills:
 | Layer | Technology |
 |---|---|
 | **UI** | Streamlit (Python) |
-| **ML Forecasting** | ARIMA (statsmodels) |
+| **ML Forecasting** | XGBoost (gblinear) |
 | **Cloud Database** | TiDB Serverless (MySQL-compatible) |
 | **Live Trends** | Google Trends via SerpApi |
 | **Data Sources** | Stack Overflow Tag API, PyPI Stats, npm Registry |
@@ -43,10 +43,10 @@ Macro-level industry intelligence across all 109 skills:
 ## 🧠 Data Pipeline
 
 ```
-Stack Overflow API (5 years)
+Stack Overflow API (6 years)
 PyPI Stats + npm Registry       → master_ingestion.py
         ↓
-  unified_dataset.csv           → run_arima_pipeline.py (ARIMA)
+  unified_dataset.csv           → run_xgboost_pipeline.py (XGBoost)
         ↓
   production_forecast.csv       → cloud_migration.py
         ↓
@@ -61,7 +61,7 @@ PyPI Stats + npm Registry       → master_ingestion.py
 
 | Model | R² Score | Best For |
 |---|---|---|
-| **ARIMA** | per-skill | Time-series 3-year forecasting |
+| **XGBoost (gblinear)** | per-skill | Time-series 3-year forecasting |
 | **XGBoost** | 0.960 | Tabular demand prediction |
 | **Random Forest** | 0.957 | Robust baseline comparison |
 
@@ -74,16 +74,16 @@ Full analysis available in [`notebooks/skill_decay_analysis.ipynb`](notebooks/sk
 ```
 Skill_Decay_Project/
 ├── core/
-│   ├── master_ingestion.py    # Real data fetcher (SO + PyPI + npm)
-│   ├── data_builder.py        # Synthetic fallback generator
-│   ├── run_arima_pipeline.py  # ARIMA ML forecasting engine
-│   └── cloud_migration.py    # TiDB Cloud uploader
+│   ├── master_ingestion.py       # Real data fetcher (SO + PyPI + npm)
+│   ├── data_builder.py           # Synthetic fallback generator
+│   ├── run_xgboost_pipeline.py   # XGBoost ML forecasting engine
+│   └── cloud_migration.py       # TiDB Cloud uploader
 ├── notebooks/
 │   └── skill_decay_analysis.ipynb  # Full ML analysis + comparison charts
 ├── ui/
-│   └── dashboard.py           # Streamlit dashboard (2 pages)
-├── models/                    # Trained .pkl model files
-├── .gitignore                 # Excludes secrets, data/, decay_env/
+│   └── dashboard.py              # Streamlit dashboard (2 pages)
+├── models/                       # Trained .pkl model files
+├── .gitignore                    # Excludes secrets, data/, decay_env/
 └── requirements.txt
 ```
 
@@ -112,7 +112,7 @@ pip install -r requirements.txt
 
 # 5. Run the data pipeline (first time only, ~8 minutes)
 python core/master_ingestion.py
-python core/run_arima_pipeline.py
+python core/run_xgboost_pipeline.py
 python core/cloud_migration.py
 
 # 6. Launch the dashboard
@@ -121,15 +121,19 @@ streamlit run ui/dashboard.py
 
 ---
 
-## 🌐 109 Tracked Technologies Across 10 Domains
+## 🌐 109 Tracked Technologies Across 12 Domains
 
 | Domain | Skills |
 |---|---|
-| **Languages** | Python, JavaScript, Java, C++, C#, Rust, Go, TypeScript, Swift, Kotlin, Ruby, PHP, Scala, R, Dart, Julia, Perl, Lua, Bash |
+| **Languages** | Python, JavaScript, Java, C++, C#, Rust, Go, TypeScript, Swift, Kotlin, Ruby, PHP, Scala, R, Dart, Julia, Objective-C, Perl, Lua, Bash |
 | **Frontend** | ReactJS, Angular, Vue.js, Svelte, Next.js, HTML, CSS, Tailwind CSS, Bootstrap, jQuery |
 | **Backend** | Node.js, Django, Flask, Spring, Laravel, FastAPI, Express, GraphQL, ASP.NET |
 | **Mobile** | React Native, Flutter, Android, iOS, Xamarin, Ionic |
-| **Databases** | MySQL, PostgreSQL, MongoDB, Redis, SQLite, Elasticsearch, Oracle, Cassandra, DynamoDB, Firebase |
-| **Cloud & DevOps** | AWS, Azure, GCP, Docker, Kubernetes, Terraform, Linux, Git, Jenkins, GitHub Actions, Ansible, Nginx |
+| **Databases** | MySQL, PostgreSQL, MongoDB, Redis, SQLite, Elasticsearch, Oracle, Cassandra, DynamoDB, Firebase, Supabase, Prisma, Neo4j, Clickhouse |
+| **Cloud & DevOps** | AWS, Azure, Google Cloud Platform, Docker, Kubernetes, Terraform, Linux, Git, Jenkins, GitHub Actions, Ansible, Nginx, Vercel, Netlify, Pulumi, Cloudflare |
 | **Data & AI** | Pandas, NumPy, TensorFlow, PyTorch, scikit-learn, Hadoop, Apache Spark, Kafka, Snowflake, Airflow |
 | **Testing & Tools** | Cypress, Selenium, Jest, Pytest, Mocha, Figma, Jira |
+| **Generative AI & LLMs** | Langchain, OpenAI API, Hugging Face, Llama, Stable Diffusion, Prompt Engineering |
+| **Cybersecurity** | Kali Linux, Burp Suite, Wireshark, Splunk, Ethical Hacking |
+| **Web3 & Blockchain** | Solidity, Web3.js, Hardhat |
+| **Game Dev** | Unity, Unreal Engine, Godot |
